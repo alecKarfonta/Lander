@@ -8,7 +8,7 @@ public class CameraController {
 	private static final String TAG = CameraController.class.getName();
 	
 	// settings
-	public final float MAX_ZOOM_IN = .01f,
+	public final float MAX_ZOOM_IN = .1f,
 			MAX_ZOOM_OUT = .5f,
 			FOLLOW_SPEED = .05f,
 			ZOOM_SPEED = .03f;

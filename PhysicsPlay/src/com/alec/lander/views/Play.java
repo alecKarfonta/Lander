@@ -81,14 +81,15 @@ public class Play implements Screen {
 			public float reportRayFixture(Fixture fixture, Vector2 point,
 					Vector2 normal, float fraction) {
 				rayCastCollision.set(point);
-				if (rayCastCollision.y < 100 && rayCastCollision.y > 20) {
+				if (rayCastCollision.y < 100 && rayCastCollision.y > 50) {
 					cameraController.setTargetZoom(MyMath.convertRanges(
-							rayCastCollision.y, 
-							0, 200,
-							cameraController.MAX_ZOOM_IN,
+							rayCastCollision.dst(lander.getChassis().getPosition()), 
+							0, 100,
+							cameraController.MAX_ZOOM_IN + .05f,
 							cameraController.MAX_ZOOM_OUT));
+					System.out.println(rayCastCollision.dst(lander.getChassis().getPosition()));
 				}
-				System.out.println("Point: " + point.x + " , " + point.y);
+				
 				return 1;
 			}
 
@@ -214,17 +215,18 @@ public class Play implements Screen {
 
 		update(delta);
 
+		/** /
 		Vector2 rayCast = new Vector2();
 		rayCast.add(lander.getChassis().getPosition());
-		rayCast.add(0, -1000);
+		rayCast.add(0, -100);
 		world.rayCast(callback, lander.getChassis().getPosition(), rayCast);
 
 		shapeRenderer.setProjectionMatrix(cameraGame.combined);
-		shapeRenderer.begin(ShapeType.Line);
-		shapeRenderer.line(lander.getChassis().getPosition(), rayCast);
-		shapeRenderer.line(rayCastCollision, normal);
+		shapeRenderer.begin(ShapeType.Point);
+		shapeRenderer.setColor(Color.RED);
+		shapeRenderer.point(rayCastCollision.x, rayCastCollision.y, 0);
 		shapeRenderer.end();
-
+		/**/
 	}
 
 	public void createUI() {
