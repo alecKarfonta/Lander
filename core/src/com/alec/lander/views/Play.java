@@ -20,13 +20,11 @@ import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.GL10;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
@@ -35,7 +33,6 @@ import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.Joint;
 import com.badlogic.gdx.physics.box2d.RayCastCallback;
 import com.badlogic.gdx.physics.box2d.World;
-import com.badlogic.gdx.utils.Array;
 
 public class Play implements Screen {
 	private World world;
@@ -55,6 +52,7 @@ public class Play implements Screen {
 	private int height = Gdx.graphics.getHeight();
 	private int bottom = -(height / 2);
 
+	
 	public Lander lander;
 	private Vector2 startPos, rayCastCollision, normal;
 	private RayCastCallback callback;
@@ -113,12 +111,15 @@ public class Play implements Screen {
 							break;
 						case Keys.ESCAPE:
 							((Game) Gdx.app.getApplicationListener())
-									.setScreen(new Play());
+									.setScreen(new MainMenu());
 							break;
 
 						case Keys.X:
 							shouldDestroyLander = true;
-
+							
+							break;
+						default:
+							break;
 						}
 						return false;
 					}
@@ -176,8 +177,8 @@ public class Play implements Screen {
 
 	@Override
 	public void render(float delta) {
-		Gdx.gl.glClearColor(0, 0, 0, 1);
-		Gdx.gl.glClear(GL10.GL_COLOR_BUFFER_BIT);
+		//Gdx.gl.glClearColor(0, 0, 0, 1);
+		//Gdx.gl.glClear(GL10.GL_COLOR_BUFFER_BIT);
 
 		// increment the world
 		world.step(TIMESTEP, VELOCITYITERATIONS, POSITIONITERATONS);

@@ -20,11 +20,4 @@
 		<nature>org.eclipse.jdt.core.javanature</nature>
 		<nature>net.sourceforge.metrics.nature</nature>
 	</natures>
-	<linkedResources>
-		<link>
-			<name>assets</name>
-			<type>2</type>
-			<location>/Volumes/Storage/Programming/Eclipse/Lander/PhysicsPlay-android/assets</location>
-		</link>
-	</linkedResources>
 </projectDescription>
