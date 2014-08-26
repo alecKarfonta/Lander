@@ -7,6 +7,15 @@ public class Constants {
 	public final static int VELOCITYITERATIONS = 8;
 	public final static int POSITIONITERATONS = 3;
 	
+	public static final float VIEWPORT_WIDTH = 128f;
+	public static final float VIEWPORT_HEIGHT = 72f;
+	public static final float VIEWPORT_GUI_WIDTH = 1280.0f;
+	public static final float VIEWPORT_GUI_HEIGHT = 720.0f;
+
+	public static final String TEXTURE_ATLAS_OBJECTS = "images/lander.pack";
+	public static final String TEXTURE_ATLAS_MENU_UI = "ui/uiskin.atlas";
+	public static final String SKIN_MENU_UI = "ui/uiskin.json";
+	
 	public final static short FILTER_NONE = 0x0000;
 	public final static short FILTER_GROUND = 0x0001;
 	public final static short FILTER_LANDER = 0x0002;
@@ -17,5 +26,6 @@ public class Constants {
 	
 
 	public static final String PREFERENCES = "default.prefs";
+
 	
 }

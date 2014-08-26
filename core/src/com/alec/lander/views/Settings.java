@@ -72,7 +72,7 @@ public class Settings implements Screen {
 					stage.addAction(sequence(moveTo(0, stage.getHeight(), .5f), run(new Runnable() {
 						@Override
 						public void run() {
-							((Game) Gdx.app.getApplicationListener()).setScreen(new MainMenu());
+							((Game) Gdx.app.getApplicationListener()).setScreen(new Play(1));
 						}
 					})));
 				}
@@ -124,7 +124,6 @@ public class Settings implements Screen {
 
 	@Override
 	public void resize(int width, int height) {
-		stage.setViewport(width, height, false);
 		table.invalidateHierarchy();
 	}
 

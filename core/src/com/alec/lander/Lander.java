@@ -15,7 +15,7 @@ public class Lander extends Game {
 		GamePreferences.instance.load();
 		AudioManager.instance.play(Assets.instance.music.intro);
 		
-		setScreen(new Play());
+		setScreen(new Play(1));
 	}
 
 	@Override

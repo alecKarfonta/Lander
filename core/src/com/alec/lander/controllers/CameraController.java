@@ -9,9 +9,9 @@ public class CameraController {
 	
 	// settings
 	public final float MAX_ZOOM_IN = .1f,
-			MAX_ZOOM_OUT = .5f,
+			MAX_ZOOM_OUT = 1f,
 			FOLLOW_SPEED = .05f,
-			ZOOM_SPEED = .03f;
+			ZOOM_SPEED = .01f;
 
 	private Vector2 position;	
 	private Vector2 target;
@@ -23,8 +23,8 @@ public class CameraController {
 		target = new Vector2(0,0);
 		zoom = new Vector2();
 		targetZoom = new Vector2();
-		zoom.x = .1f;
-		targetZoom.x = .3f; 			// init zoom
+		zoom.x = MAX_ZOOM_IN;
+		targetZoom.x = MAX_ZOOM_IN; 			// init zoom
 	}
 
 	public void update(float deltaTime) {

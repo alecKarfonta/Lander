@@ -3,7 +3,6 @@ package com.alec.lander.desktop;
 import com.badlogic.gdx.tools.texturepacker.TexturePacker;
 import com.badlogic.gdx.tools.texturepacker.TexturePacker.Settings;
 
-
 public class TexturePack {
 
 	private static boolean drawDebugOutline = false;
@@ -13,6 +12,6 @@ public class TexturePack {
 		settings.maxWidth = 4096;
 		settings.maxHeight = 2048;
 		settings.debug = drawDebugOutline;
-		TexturePacker.process(settings, "assets-raw", "../android/assets/images", "TextureAtlas.pack");
+		TexturePacker.process(settings, "assets-raw/", "../android/assets/images", "lander.pack");
 	}
 }

@@ -1,10 +1,10 @@
 package com.alec.lander.controllers;
 
 import com.alec.lander.views.Play;
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.physics.box2d.Contact;
 import com.badlogic.gdx.physics.box2d.ContactImpulse;
 import com.badlogic.gdx.physics.box2d.ContactListener;
+import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.Manifold;
 
 public class MyContactListener implements ContactListener {
@@ -23,8 +23,7 @@ public class MyContactListener implements ContactListener {
 
 	@Override
 	public void endContact(Contact contact) {
-		// TODO Auto-generated method stub
-		
+			play.lander.endContact();
 	}
 
 	@Override
@@ -34,8 +33,42 @@ public class MyContactListener implements ContactListener {
 	}
 	@Override
 	public void postSolve(Contact contact, ContactImpulse impulse) {
-		if (impulse.getNormalImpulses()[0] > 200) {
-			play.destroyLander();
+		if (contact.getFixtureA().getBody().getUserData() instanceof String) {
+			postSolver(contact.getFixtureA(), impulse.getNormalImpulses()[0]);
+		}
+		
+		if (contact.getFixtureB().getBody().getUserData() instanceof String) {
+			postSolver(contact.getFixtureB(), impulse.getNormalImpulses()[0]);
+		}
+	}
+	
+	public void postSolver(Fixture fixture, float impulse) {
+		if (fixture.getBody().getUserData() instanceof String) {
+			String data = (String) fixture.getBody().getUserData();
+			if ( data != null && data.contains("lander")) {
+				// if the force is over the threshold for death
+				if (impulse > 200) {
+					// if the impact was with a leg
+					if (data.contains("leg")) {
+						if (data.contains("left")) {
+							if (!play.lander.isDead) {
+								play.lander.breakLeg(0);
+							}
+						} else if (data.contains("right")) {
+							if (!play.lander.isDead) {
+								play.lander.breakLeg(1);
+							}
+						}
+					}   
+					// if the impact was with the chassis
+					if (data.contains("chassis")) {
+						play.destroyLander();
+					}
+				// else the lander impacted, but did not explode	
+				} else {
+					play.lander.beginContact();
+				}
+			}
 		}
 	}
 

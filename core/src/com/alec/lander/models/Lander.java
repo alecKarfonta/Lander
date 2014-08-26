@@ -8,12 +8,10 @@ import box2dLight.RayHandler;
 import com.alec.lander.Constants;
 import com.alec.lander.MyMath;
 import com.alec.lander.controllers.AudioManager;
+import com.alec.lander.views.Play;
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input.Keys;
-import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.Texture.TextureFilter;
 import com.badlogic.gdx.graphics.g2d.ParticleEmitter;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -42,16 +40,26 @@ public class Lander {
 	private Sprite piece1Sprite, piece2Sprite, piece3Sprite;
 	private float x, y;
 	private float fuel;
-	private int smallLightDistance = 70, spotLightDistance = 250;
 	private float smallLightPulseTimer = 0.0f;
 	private float width, height, rocketWidth, rocketHeight, legWidth,
 			legHeight;
 	public boolean isFiringMainRocket = false, isFiringLeftRocket = false,
-			isFiringRightRocket = false, isDead = false;
-	private float contactTimer = 3.0f;
+			isFiringRightRocket = false, isDead = false, isMissingLeftLeg = false, isMissingRightLeg = false,
+			isHidden = false;
+	private float winTimer = 7.0f, winTimerInit = winTimer;
 	public boolean isContactingGround = false;
+	private Play play; // keep reference to play
+	// settings
+	private float mainThruster = .75f,
+			fuelCost = .0005f, 		// cost of fuel per frame
+			sideThruster = .55f;	// * chassis mass
+	private int smallLightDistance = 120, 
+				spotLightDistance = 500;
+	private float smallLightIntensity = .30f,
+				spotLightIntensity = .15f;
 	
-	public Lander(World world, Vector2 initPos) {
+	public Lander(Play play, World world, Vector2 initPos) {
+		this.play = play;
 		this.x = initPos.x;
 		this.y = initPos.y;
 		this.width = 10;
@@ -62,6 +70,8 @@ public class Lander {
 		legWidth = width * .4f;
 		legHeight = height * .75f;
 
+		String name = "lander";	// user data
+		
 		FixtureDef chassisFixtureDef = new FixtureDef();
 		chassisFixtureDef.density = .9f;
 		chassisFixtureDef.friction = .32f;
@@ -83,10 +93,9 @@ public class Lander {
 
 		chassis = world.createBody(bodyDef);
 		chassis.createFixture(chassisFixtureDef);
+		chassis.setUserData(name + "_chassis");
 		
-		Texture texture = new Texture("images/lander/lander.png");
-		texture.setFilter(TextureFilter.Linear, TextureFilter.Linear);
-		chassisSprite = new Sprite(texture);
+		chassisSprite = new Sprite(Assets.instance.lander.chassis);
 		chassisSprite.setSize(width, height);
 		chassisSprite.setOrigin(width / 2, height / 2);
 
@@ -95,15 +104,12 @@ public class Lander {
 		PolygonShape legShape = new PolygonShape();
 		legShape.setAsBox(legWidth / 2, legHeight / 2);
 
-		Texture leg = new Texture("images/lander/rightLeg.png");
-		texture.setFilter(TextureFilter.Linear, TextureFilter.Linear);
-		rightLegSprite = new Sprite(leg);
+		rightLegSprite = new Sprite(Assets.instance.lander.rightLeg);
 
 		rightLegSprite.setSize(legWidth, legHeight);
 		rightLegSprite.setOrigin(legWidth / 2, legHeight / 2);
 
-		leftLegSprite = new Sprite(leg);
-		leftLegSprite.flip(true, false);
+		leftLegSprite = new Sprite(Assets.instance.lander.leftLeg);
 		leftLegSprite.setSize(legWidth, legHeight);
 		leftLegSprite.setOrigin(legWidth / 2, legHeight / 2);
 
@@ -117,12 +123,11 @@ public class Lander {
 
 		leftLeg = world.createBody(bodyDef);
 		leftLeg.createFixture(legFixture);
-		String name = "leg";
-		leftLeg.setUserData(name);
+		leftLeg.setUserData(name + "_leg_left");
 
 		rightLeg = world.createBody(bodyDef);
 		rightLeg.createFixture(legFixture);
-		rightLeg.setUserData(name);
+		rightLeg.setUserData(name + "_leg_right");
 
 		PrismaticJointDef legJointDef = new PrismaticJointDef();
 		legJointDef.bodyA = chassis;
@@ -151,10 +156,8 @@ public class Lander {
 		// rocket
 		PolygonShape rocketShape = new PolygonShape();
 		rocketShape.setAsBox(rocketWidth / 2, rocketHeight / 2);
-		Texture rocketTexture = new Texture("images/lander/rocket.png");
-		rocketTexture.setFilter(TextureFilter.Linear, TextureFilter.Linear);
 
-		rocketSprite = new Sprite(rocketTexture);
+		rocketSprite = new Sprite(Assets.instance.lander.rocket);
 		rocketSprite.setSize(rocketWidth, rocketHeight);
 		rocketSprite.setOrigin(rocketWidth / 2, rocketHeight / 2);
 
@@ -168,6 +171,7 @@ public class Lander {
 
 		rocket = world.createBody(bodyDef);
 		rocket.createFixture(rocketFixture);
+		rocket.setUserData(name);
 
 		// joint - chassis : rocket
 		RevoluteJointDef jointChassisRocketDef = new RevoluteJointDef();
@@ -203,31 +207,33 @@ public class Lander {
 		sideExhaust.setSprite(particle);
 	}
 
+	// Update
 	public void update(float delta) {
 		if (isContactingGround) {
-			contactTimer -= delta;
+			winTimer -= delta;
 			// if the contact timer ends and the player is not dead
-			if (contactTimer < 0 && !isDead) {
+			if (winTimer < 0 && !isDead) {
 				// win 
 				// TODO: fire works, "houston the eagle has landed", a guy hops out
+				play.win();
 			}
 		}
 		
 		if (isFiringMainRocket) {
 				chassis.applyLinearImpulse(MyMath.getRectCoords(
-						.2f * chassis.getMass(),
+						mainThruster * chassis.getMass(),
 						(float) (Math.toDegrees(chassis.getAngle()) + -270)),
 						chassis.getPosition(), false);
-				fuel -= .001f;
+				fuel -= fuelCost;
 				if (fuel < 0.0f) {
 					stopMainRocket();
 				}
 		}
 		if (isFiringLeftRocket) {
-			chassis.applyAngularImpulse(.15f * chassis.getMass(), false);
+			chassis.applyAngularImpulse(sideThruster * chassis.getMass(), false);
 		}
 		if (isFiringRightRocket) {
-			chassis.applyAngularImpulse(-.15f * chassis.getMass(), false);
+			chassis.applyAngularImpulse(-sideThruster * chassis.getMass(), false);
 		}
 
 		// update lights
@@ -235,84 +241,89 @@ public class Lander {
 		if (smallLightPulseTimer > 1) {
 			smallLightPulseTimer = 0.0f;
 		}
-		smallLight.setDistance(smallLightDistance);
-		spotLight.setPosition(chassis.getPosition());
-		spotLight
-				.setDirection((float) (270 + Math.toDegrees(chassis.getAngle())));
+		spotLight.setDirection((float) (270 + Math.toDegrees(chassis.getAngle())));
+		Vector2 posOffset = MyMath.getRectCoords(new Vector2(5, (float) (270 + Math.toDegrees(chassis.getAngle()))));
+		Vector2 pos = new Vector2(chassis.getPosition().x + posOffset.x, chassis.getPosition().y + posOffset.y);
+		spotLight.setPosition(pos);
 	}
 
 	public void render(SpriteBatch spriteBatch, float delta) {
-		x = chassis.getPosition().x;
-		y = chassis.getPosition().y;
-
-		if (!mainExhaust.isComplete()) {
-			Vector2 pos = chassis
-					.getPosition()
-					.add(MyMath.getRectCoords(3f,
-							(float) (Math.toDegrees(chassis.getAngle()) + 270)));
-			mainExhaust.setPosition(pos.x, pos.y);
-			setMainExhaustRotation();
-			mainExhaust.draw(spriteBatch, delta);
+		if (!isHidden) {
+	 		x = chassis.getPosition().x;
+			y = chassis.getPosition().y;
+	
+			if (!mainExhaust.isComplete()) {
+				Vector2 posOffset = MyMath.getRectCoords(new Vector2(3, (float) (270 + Math.toDegrees(chassis.getAngle()))));
+				Vector2 pos = new Vector2(chassis.getPosition().x + posOffset.x, chassis.getPosition().y + posOffset.y);
+				pos.add(MyMath.getRectCoords(3f,
+								(float) (Math.toDegrees(chassis.getAngle()) + 270)));
+				mainExhaust.setPosition(pos.x, pos.y);
+				setMainExhaustRotation();
+				mainExhaust.draw(spriteBatch, delta);
+			}
+	
+			if (!sideExhaust.isComplete()) {
+				Vector2 pos = chassis
+						.getPosition()
+						.add(MyMath.getRectCoords(
+								width * .4f,
+								(float) (Math.toDegrees(chassis.getAngle()) + (isFiringLeftRocket ? 45
+										: 135))));
+				sideExhaust.setPosition(pos.x, pos.y);
+				setSideExhaustRotation(isFiringLeftRocket);
+				sideExhaust.draw(spriteBatch, delta);
+			}
+	
+			rocketSprite.setPosition(rocket.getPosition().x - rocketWidth / 2,
+					rocket.getPosition().y - rocketHeight / 2);
+			rocketSprite.setRotation((float) Math.toDegrees(rocket.getAngle()));
+			rocketSprite.draw(spriteBatch);
+	
+			if (leftLeg != null) {
+				leftLegSprite.setPosition(leftLeg.getPosition().x - legWidth / 2,
+						leftLeg.getPosition().y - legHeight / 2);
+				leftLegSprite.setRotation((float) Math.toDegrees(leftLeg.getAngle()));
+				leftLegSprite.draw(spriteBatch);
+			}
+	
+			if (rightLeg != null) {
+				rightLegSprite.setPosition(rightLeg.getPosition().x - legWidth / 2,
+						rightLeg.getPosition().y - legHeight / 2);
+				rightLegSprite.setRotation((float) Math.toDegrees(rightLeg.getAngle()));
+				rightLegSprite.draw(spriteBatch);
+			}
+			
+			if (!isDead) {
+				chassisSprite.setPosition(x - width / 2, y - height / 2);
+				chassisSprite
+						.setRotation((float) Math.toDegrees(chassis.getAngle()));
+				chassisSprite.draw(spriteBatch);
+	
+			} else if (piece1Sprite != null) {
+				piece1Sprite.setPosition(piece1.getPosition().x,
+						piece1.getPosition().y);
+				piece1Sprite.setRotation((float) Math.toDegrees(piece1.getAngle()));
+				piece1Sprite.draw(spriteBatch);
+				piece2Sprite.setPosition(piece2.getPosition().x,
+						piece2.getPosition().y);
+				piece2Sprite.setRotation((float) Math.toDegrees(piece2.getAngle()));
+				piece2Sprite.draw(spriteBatch);
+				piece3Sprite.setPosition(piece3.getPosition().x,
+						piece3.getPosition().y);
+				piece3Sprite.setRotation((float) Math.toDegrees(piece3.getAngle()));
+				piece3Sprite.draw(spriteBatch);
+			}
 		}
-
-		if (!sideExhaust.isComplete()) {
-			Vector2 pos = chassis
-					.getPosition()
-					.add(MyMath.getRectCoords(
-							width * .4f,
-							(float) (Math.toDegrees(chassis.getAngle()) + (isFiringLeftRocket ? 45
-									: 135))));
-			sideExhaust.setPosition(pos.x, pos.y);
-			setSideExhaustRotation(isFiringLeftRocket);
-			sideExhaust.draw(spriteBatch, delta);
-		}
-
-		rocketSprite.setPosition(rocket.getPosition().x - rocketWidth / 2,
-				rocket.getPosition().y - rocketHeight / 2);
-		rocketSprite.setRotation((float) Math.toDegrees(rocket.getAngle()));
-		rocketSprite.draw(spriteBatch);
-
-		leftLegSprite.setPosition(leftLeg.getPosition().x - legWidth / 2,
-				leftLeg.getPosition().y - legHeight / 2);
-		leftLegSprite.setRotation((float) Math.toDegrees(leftLeg.getAngle()));
-		leftLegSprite.draw(spriteBatch);
-
-		rightLegSprite.setPosition(rightLeg.getPosition().x - legWidth / 2,
-				rightLeg.getPosition().y - legHeight / 2);
-		rightLegSprite.setRotation((float) Math.toDegrees(rightLeg.getAngle()));
-		rightLegSprite.draw(spriteBatch);
-
-		if (!isDead) {
-			chassisSprite.setPosition(x - width / 2, y - height / 2);
-			chassisSprite
-					.setRotation((float) Math.toDegrees(chassis.getAngle()));
-			chassisSprite.draw(spriteBatch);
-
-		} else if (piece1Sprite != null) {
-			piece1Sprite.setPosition(piece1.getPosition().x,
-					piece1.getPosition().y);
-			piece1Sprite.setRotation((float) Math.toDegrees(piece1.getAngle()));
-			piece1Sprite.draw(spriteBatch);
-			piece2Sprite.setPosition(piece2.getPosition().x,
-					piece2.getPosition().y);
-			piece2Sprite.setRotation((float) Math.toDegrees(piece2.getAngle()));
-			piece2Sprite.draw(spriteBatch);
-			piece3Sprite.setPosition(piece3.getPosition().x,
-					piece3.getPosition().y);
-			piece3Sprite.setRotation((float) Math.toDegrees(piece3.getAngle()));
-			piece3Sprite.draw(spriteBatch);
-		}
-
 	}
 
 	public void createLights(RayHandler rayHandler) {
 		// lander lights
 		Color lightColor = Color.WHITE;
-		lightColor.a = .25f;
-		spotLight = new ConeLight(rayHandler, 100, lightColor,
+		lightColor.a = spotLightIntensity;
+		spotLight = new ConeLight(rayHandler, 60, lightColor,
 				spotLightDistance, 0, 0, 0, 55);
-		lightColor.a = .18f;
-		smallLight = new PointLight(rayHandler, 10, lightColor,
+		lightColor.a = smallLightIntensity;
+		smallLight = new PointLight(rayHandler, 50, lightColor,
 				smallLightDistance, 0, 0);
 		smallLight.attachToBody(chassis, 0, 0);
 	}
@@ -336,21 +347,53 @@ public class Lander {
 	}
 	
 	public void die() {
-		isDead = true;
-		isFiringMainRocket = false;
-		isFiringLeftRocket = false;
-		isFiringRightRocket = false;
-		AudioManager.instance.stopSound(Assets.instance.sounds.mainExhaust);
-		AudioManager.instance.stopSound(Assets.instance.sounds.sideExhaust);
-		AudioManager.instance.play(Assets.instance.sounds.playerDeath);
-		mainExhaust.allowCompletion();
-		sideExhaust.allowCompletion();
-		destroyLights();
+		if (!isDead) {
+			isDead = true;
+			isFiringMainRocket = false;
+			isFiringLeftRocket = false;
+			isFiringRightRocket = false;
+			AudioManager.instance.stopSound(Assets.instance.sounds.mainExhaust);
+			AudioManager.instance.stopSound(Assets.instance.sounds.sideExhaust);
+			AudioManager.instance.play(Assets.instance.sounds.playerDeath);
+			mainExhaust.allowCompletion();
+			sideExhaust.allowCompletion();
+			destroyLights();
+			
+			(leftLeg.getFixtureList().get(0)).setUserData("borken");
+			(rightLeg.getFixtureList().get(0)).setUserData("borken");
+			(rocket.getFixtureList().get(0)).setUserData("borken");
+			(chassis.getFixtureList().get(0)).setUserData("borken");
+		}
 	}
 
 	public void destroyLights() {
 		spotLight.setActive(false);
 		smallLight.setActive(false);
+	}
+	
+	public void breakLeg(int leg) {
+		System.out.println("breakleg" + leg);
+		if (leg == 0 && !isMissingLeftLeg) {
+			if (jointLeftLeg != null && leftLeg != null) {
+				play.destroyJoint(jointLeftLeg);
+				leftLeg.setLinearVelocity(-5, 0);
+				leftLeg.setAngularVelocity(-.05f);
+				String userData = "brokenLeg";
+				leftLeg.setUserData(userData);
+				jointLeftLeg = null;
+				isContactingGround = false;
+			}
+		} else if (!isMissingRightLeg){
+			if (jointRightLeg != null && rightLeg != null) {
+				play.destroyJoint(jointRightLeg);
+				rightLeg.setLinearVelocity(5, 0);
+				rightLeg.setAngularVelocity(.05f);
+				String userData = "brokenLeg";
+				rightLeg.setUserData(userData);
+				jointRightLeg = null;
+				isContactingGround = false;
+			}
+		}
 	}
 	
 	public void breakApart(World world) {
@@ -386,10 +429,7 @@ public class Lander {
 
 		piece1.setAngularVelocity((float) (2 * Math.random()));
 
-		Texture pieceTexture = new Texture("images/lander/piece1.png");
-		pieceTexture.setFilter(TextureFilter.Linear, TextureFilter.Linear);
-
-		piece1Sprite = new Sprite(pieceTexture);
+		piece1Sprite = new Sprite(Assets.instance.lander.piece1);
 		piece1Sprite.setSize(width * .5f, height * .5f);
 		piece1Sprite.setOrigin(width * .5f, height * .5f);
 
@@ -407,10 +447,7 @@ public class Lander {
 
 		piece2.setAngularVelocity((float) (2 * Math.random()));
 
-		pieceTexture = new Texture("images/lander/piece2.png");
-		pieceTexture.setFilter(TextureFilter.Linear, TextureFilter.Linear);
-
-		piece2Sprite = new Sprite(pieceTexture);
+		piece2Sprite = new Sprite(Assets.instance.lander.piece2);
 		piece2Sprite.setSize(width * .5f, height * .5f);
 		piece2Sprite.setOrigin(width * .5f, height * .5f);
 
@@ -426,19 +463,20 @@ public class Lander {
 				.getAngleBetween(chassis.getPosition(), piece3.getPosition()))));
 		piece3.setAngularVelocity((float) (2 * Math.random()));
 
-		pieceTexture = new Texture("images/lander/piece3.png");
-		pieceTexture.setFilter(TextureFilter.Linear, TextureFilter.Linear);
-
-		piece3Sprite = new Sprite(pieceTexture);
+		piece3Sprite = new Sprite(Assets.instance.lander.piece3);
 		piece3Sprite.setSize(width, height * .5f);
 		piece3Sprite.setOrigin(width * .5f, height * .5f * .5f);
 		
-		leftLeg.setLinearVelocity(MyMath.getRectCoords(new Vector2(15, MyMath
-				.getAngleBetween(chassis.getPosition(), leftLeg.getPosition()))));
-		leftLeg.setAngularVelocity((float) (-2 * Math.random()));
-		rightLeg.setLinearVelocity(MyMath.getRectCoords(new Vector2(15, MyMath
-				.getAngleBetween(chassis.getPosition(), rightLeg.getPosition()))));
-		rightLeg.setAngularVelocity((float) (2 * Math.random()));
+		if (leftLeg != null) {
+			leftLeg.setLinearVelocity(MyMath.getRectCoords(new Vector2(15, MyMath
+					.getAngleBetween(chassis.getPosition(), leftLeg.getPosition()))));
+			leftLeg.setAngularVelocity((float) (-2 * Math.random()));
+		}
+		if (rightLeg != null) {
+			rightLeg.setLinearVelocity(MyMath.getRectCoords(new Vector2(15, MyMath
+					.getAngleBetween(chassis.getPosition(), rightLeg.getPosition()))));
+			rightLeg.setAngularVelocity((float) (2 * Math.random()));
+		}
 		rocket.setLinearVelocity(MyMath.getRectCoords(new Vector2(15, MyMath
 				.getAngleBetween(chassis.getPosition(), rocket.getPosition()))));
 		rocket.setAngularVelocity((float) (2 * Math.random()));
@@ -494,4 +532,37 @@ public class Lander {
 		return fuel;
 	}
 
+	public Body getLeftLeg() {
+		return leftLeg;
+	}
+	
+	public Body getRightLeg() {
+		return rightLeg;
+	}
+	
+	public Body getRocket() {
+		return rocket;
+	}
+
+	public void beginContact() {
+		System.out.println("lander.beginContact()");
+		isContactingGround = true;
+	}
+
+	public void endContact() {
+		System.out.println("lander.endContact()");
+		isContactingGround = false;
+		winTimer = winTimerInit;
+	}
+
+	public float getWinTimer() {
+		return winTimer;
+	}
+
+	public void setWinTimer(float winTimer) {
+		this.winTimer = winTimer;
+	}
+	
+	
+	
 }
