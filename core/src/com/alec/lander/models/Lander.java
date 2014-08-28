@@ -54,7 +54,7 @@ public class Lander {
 			fuelCost = .0005f, 		// cost of fuel per frame
 			sideThruster = .55f;	// * chassis mass
 	private int smallLightDistance = 120, 
-				spotLightDistance = 500;
+				spotLightDistance = 800;
 	private float smallLightIntensity = .30f,
 				spotLightIntensity = .15f;
 	
@@ -255,7 +255,7 @@ public class Lander {
 			if (!mainExhaust.isComplete()) {
 				Vector2 posOffset = MyMath.getRectCoords(new Vector2(3, (float) (270 + Math.toDegrees(chassis.getAngle()))));
 				Vector2 pos = new Vector2(chassis.getPosition().x + posOffset.x, chassis.getPosition().y + posOffset.y);
-				pos.add(MyMath.getRectCoords(3f,
+				pos.add(MyMath.getRectCoords(2.5f,
 								(float) (Math.toDegrees(chassis.getAngle()) + 270)));
 				mainExhaust.setPosition(pos.x, pos.y);
 				setMainExhaustRotation();
@@ -375,6 +375,8 @@ public class Lander {
 		System.out.println("breakleg" + leg);
 		if (leg == 0 && !isMissingLeftLeg) {
 			if (jointLeftLeg != null && leftLeg != null) {
+				AudioManager.instance.play(
+						Assets.instance.sounds.legBreak);
 				play.destroyJoint(jointLeftLeg);
 				leftLeg.setLinearVelocity(-5, 0);
 				leftLeg.setAngularVelocity(-.05f);
@@ -385,6 +387,8 @@ public class Lander {
 			}
 		} else if (!isMissingRightLeg){
 			if (jointRightLeg != null && rightLeg != null) {
+				AudioManager.instance.play(
+						Assets.instance.sounds.legBreak);
 				play.destroyJoint(jointRightLeg);
 				rightLeg.setLinearVelocity(5, 0);
 				rightLeg.setAngularVelocity(.05f);
@@ -545,8 +549,12 @@ public class Lander {
 	}
 
 	public void beginContact() {
-		System.out.println("lander.beginContact()");
-		isContactingGround = true;
+//		System.out.println("lander.beginContact()");
+		
+		// if was not previously contacting, play impact sound
+		if (isContactingGround == false) {
+			isContactingGround = true;
+		}
 	}
 
 	public void endContact() {

@@ -24,8 +24,9 @@ public class Ground {
 	private Body body;
 	private Array<Vector2> points;
 	private ChainShape shape;
-	PolygonSprite polySprite;
-	PolygonRegion region;
+	private PolygonSprite polySprite;
+	private PolygonRegion region;
+	private Vector2 pos;
 	
 	// settings
 	private int xPoints, dx, randomDx, randomDy;
@@ -37,17 +38,19 @@ public class Ground {
 	
 	public Ground (World world) {
 		this(world, 	// defaults
+				0, 0,
 				4000,	// point count
 				 2,	// dx min
 				 70,	// randomDx
 				50 );	// randomDy
 	}
 	
-	public Ground(World world, int xPoints, int dx, int randomDx, int randomDy) {
+	public Ground(World world, int initX, int initY, int xPoints, int dx, int randomDx, int randomDy) {
 		this.xPoints = xPoints;
 		this.dx = dx;
 		this.randomDx = randomDx;
 		this.randomDy = randomDy;
+		this.pos = new Vector2(initX, initY);
 		// body definition
 		BodyDef bodyDef = new BodyDef();
 		bodyDef.type = BodyType.StaticBody;
@@ -91,18 +94,8 @@ public class Ground {
                 .computeTriangles(vertices)
                 .toArray();
         
-//        for (int index = 0; index < triangles.length - 2; index+=3) {
-//        	System.out.println(triangles[index] + " " + triangles[index + 1] + " " + triangles[index + 2]);
-//        	
-//        }
-//        region = new PolygonRegion(
-//              Assets.instance.levelDecorations.surface, vertices, triangles);
-//        polySprite = new PolygonSprite(region);
-		
-//        textureBrick = new Texture(Gdx.files.internal("data/brick.png"));
-//        Texture texture = Assets.instance.levelDecorations.surface.getTexture();
         Texture texture = new Texture(Gdx.files.internal("images/surface_alt.png"));
-        texture.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
+        texture.setWrap(TextureWrap.MirroredRepeat, TextureWrap.MirroredRepeat);
         System.out.println("Width: " + points.get(0).x + points.get(points.size-1).x);
         TextureRegion texreg = new TextureRegion(texture,0,0,points.get(0).x + points.get(points.size-2).x,300);
         texreg.setTexture(texture);
@@ -161,10 +154,6 @@ public class Ground {
 		return peek;
 	}
 
-	public void setPeek(int peek) {
-		this.peek = peek;
-	}
-
 	public void update(float delta) {
 		
 	}
@@ -172,7 +161,20 @@ public class Ground {
 	public void render(PolygonSpriteBatch batch) {
 
 //		polySprite.setPosition(body.getPosition().x, body.getPosition().y);
-		Gdx.gl.glEnable(GL20.GL_TEXTURE_2D);
-	    batch.draw(region, 0,0, region.getRegion().getRegionWidth(), region.getRegion().getRegionHeight());
+//		Gdx.gl.glEnable(GL20.GL_TEXTURE_2D);
+//		Gdx.gl.glEnable(GL20.GL_TEXTURE_2D);
+		Gdx.gl.glEnable(GL20.GL_TEXTURE_WRAP_S);
+	    batch.draw(region, pos.x,pos.y, region.getRegion().getRegionWidth(), region.getRegion().getRegionHeight());
+	}
+
+
+	public Vector2 getPos() {
+		return pos;
+	
+	}
+
+
+	public void setPos(Vector2 pos) {
+		this.pos = pos;
 	}
 }

@@ -1,5 +1,6 @@
 package com.alec.lander.controllers;
 
+import com.alec.lander.models.Assets;
 import com.alec.lander.views.Play;
 import com.badlogic.gdx.physics.box2d.Contact;
 import com.badlogic.gdx.physics.box2d.ContactImpulse;
@@ -46,6 +47,10 @@ public class MyContactListener implements ContactListener {
 		if (fixture.getBody().getUserData() instanceof String) {
 			String data = (String) fixture.getBody().getUserData();
 			if ( data != null && data.contains("lander")) {
+				if (impulse > 100) {
+					AudioManager.instance.play(
+							Assets.instance.sounds.landerImpact);
+				}
 				// if the force is over the threshold for death
 				if (impulse > 200) {
 					// if the impact was with a leg

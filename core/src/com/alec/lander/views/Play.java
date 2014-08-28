@@ -2,8 +2,6 @@ package com.alec.lander.views;
 
 import java.util.ArrayList;
 
-import javax.media.j3d.AmbientLight;
-
 import box2dLight.DirectionalLight;
 import box2dLight.Light;
 import box2dLight.RayHandler;
@@ -14,6 +12,7 @@ import com.alec.lander.controllers.AudioManager;
 import com.alec.lander.controllers.CameraController;
 import com.alec.lander.controllers.MyContactListener;
 import com.alec.lander.models.Assets;
+import com.alec.lander.models.Button;
 import com.alec.lander.models.Firework;
 import com.alec.lander.models.FireworkExplosion;
 import com.alec.lander.models.FuelGauge;
@@ -21,19 +20,24 @@ import com.alec.lander.models.Ground;
 import com.alec.lander.models.Lander;
 import com.alec.lander.models.LanderDeath;
 import com.alec.lander.models.Stars;
-import com.badlogic.gdx.Game;
+import com.alec.lander.views.transitions.ScreenTransition;
+import com.alec.lander.views.transitions.ScreenTransitionFade;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
+import com.badlogic.gdx.Input.Peripheral;
 import com.badlogic.gdx.InputAdapter;
-import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.PolygonSpriteBatch;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
 import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
 import com.badlogic.gdx.physics.box2d.Filter;
@@ -45,7 +49,7 @@ import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Timer;
 import com.badlogic.gdx.utils.Timer.Task;
 
-public class Play implements Screen {
+public class Play extends AbstractGameScreen {
 	private World world;
 	private Box2DDebugRenderer debugRenderer;
 	private OrthographicCamera cameraLighted, cameraUI, cameraBackground;
@@ -54,10 +58,12 @@ public class Play implements Screen {
 	private PolygonSpriteBatch polySpriteBatch;
 	private ShapeRenderer shapeRenderer;
 	private RayHandler rayHandler;
+	private InputAdapter inputAdapter;
 	private int rayCastDistance = 315;
 	// private Sprite background;
 	private Stars stars;
 	private FuelGauge fuelGauge;
+	private Button mainThrust1, mainThrust2, sideThrust1, sideThrust2;
 
 	private final float TIMESTEP = 1 / 60f;
 	private final int VELOCITYITERATIONS = 8;
@@ -67,19 +73,23 @@ public class Play implements Screen {
 	private int height = Gdx.graphics.getHeight();
 
 	public Lander lander;
-	private Vector2 rayCastCollision, normal;
+	private Vector2 rayCastCollision, normal, landerPos, targetAngle;
 	private RayCastCallback callback;
 	private LanderDeath landerDeath;
 	private Ground ground;
-	private boolean shouldDestroyLander = false;
+	private boolean shouldDestroyLander = false, isUsingAccelerometer = false,
+			isReady = false; // wait to load textures and lights
 	private ArrayList<Body> destroyQueue = new ArrayList<Body>();
 	private ArrayList<Joint> destroyJointQueue = new ArrayList<Joint>();
 	private Array<Firework> fireworks;
 	private Array<FireworkExplosion> fireworkExplosions;
 
+	private Vector3 touchPoint = new Vector3();
+	private Color colorMainButton, colorSideButton;
+
 	// game stats
 	private int currentLevel;
-	
+
 	private boolean isDarkSide = true;
 	private boolean isWon = false;
 
@@ -87,8 +97,15 @@ public class Play implements Screen {
 	private float nextGameDelay = 7.0f;
 	private int initVelocity = 70;
 
-	public Play(int level) {
+	public Play(DirectedGame game, int level) {
+		super(game);
 		System.out.println("Play( " + level + ")");
+		// check if accelerometer is available
+		if (Gdx.input.isPeripheralAvailable(Peripheral.Accelerometer)) {
+			isUsingAccelerometer = true;
+			targetAngle = new Vector2(0, 100);
+		}
+
 		currentLevel = level;
 	}
 
@@ -208,23 +225,23 @@ public class Play implements Screen {
 		destroy(lander.getRocket());
 		fireworks.clear();
 		fireworkExplosions.clear();
-		
+
 		lander.isHidden = true;
 		lander.isContactingGround = false;
 		switch (level) {
-		case 1: 
+		case 1:
 			startLevel1();
 			break;
-		case 2: 
+		case 2:
 			startLevel2();
 			break;
-		case 3: 
+		case 3:
 			startLevel3();
 			break;
-		case 4: 
+		case 4:
 			startLevel4();
 			break;
-		case 5: 
+		case 5:
 			startLevel5();
 			break;
 		}
@@ -233,7 +250,7 @@ public class Play implements Screen {
 		lander.isContactingGround = false;
 		isWon = false;
 	}
-	
+
 	public void win() {
 		System.out.println("win( " + currentLevel + ")");
 		if (isWon != true) {
@@ -285,9 +302,9 @@ public class Play implements Screen {
 				System.out.println("final win");
 				createFireworks(100);
 				break;
-				
+
 			}
-			
+
 		}
 	}
 
@@ -337,88 +354,106 @@ public class Play implements Screen {
 
 		};
 		// set up the input listener
-		Gdx.input.setInputProcessor(
-		// anonymous inner class for screen specific input
-				new InputAdapter() {
-					// Handle keyboard input
-					@Override
-					public boolean keyDown(int keycode) {
-						switch (keycode) {
-						case Keys.A:
-							lander.fireLeftRocket();
-							break;
-						case Keys.D:
-							lander.fireRightRocket();
-							break;
-						case Keys.SPACE:
-							lander.fireMainRocket();
-							break;
-						case Keys.ESCAPE:
-							((Game) Gdx.app.getApplicationListener())
-									.setScreen(new Play(1));
-							break;
+		inputAdapter = new InputAdapter() {
+			// Handle keyboard input
+			@Override
+			public boolean keyDown(int keycode) {
+				// stop input after win, except on level 5
+				if (!isWon || currentLevel == 5) {
+					switch (keycode) {
+					case Keys.A:
+						lander.fireLeftRocket();
+						break;
+					case Keys.D:
+						lander.fireRightRocket();
+						break;
+					case Keys.SPACE:
+						lander.fireMainRocket();
+						break;
+					case Keys.ESCAPE:
+						ScreenTransition transition = ScreenTransitionFade
+								.init(0.75f);
+						game.setScreen(new MainMenu(game), transition);
+						break;
 
-						case Keys.X:
-							shouldDestroyLander = true;
+					case Keys.X:
+						shouldDestroyLander = true;
 
-							break;
-						default:
-							break;
-						}
-						return false;
+						break;
+					default:
+						break;
 					}
+				}
+				return false;
+			}
 
-					@Override
-					public boolean keyUp(int keycode) {
-						switch (keycode) {
-						case Keys.A:
-							lander.stopLeftRocket();
-							break;
-						case Keys.D:
-							lander.stopRightRocket();
-							break;
-						case Keys.SPACE:
-							lander.stopMainRocket();
-							break;
-						default:
-							break;
-						}
-						return false;
-					}
+			@Override
+			public boolean keyUp(int keycode) {
+				switch (keycode) {
+				case Keys.A:
+					lander.stopLeftRocket();
+					break;
+				case Keys.D:
+					lander.stopRightRocket();
+					break;
+				case Keys.SPACE:
+					lander.stopMainRocket();
+					break;
+				default:
+					break;
+				}
+				return false;
+			}
 
-					// zoom
-					@Override
-					public boolean scrolled(int amount) {
-						if (amount == 1) {
-							cameraController.addZoom(cameraLighted.zoom * .25f);
-						} else if (amount == -1) {
-							cameraController
-									.addZoom(-cameraLighted.zoom * .25f);
-						}
-						return true;
-					}
+			// zoom
+			@Override
+			public boolean scrolled(int amount) {
+				if (amount == 1) {
+					cameraController.addZoom(cameraLighted.zoom * .25f);
+				} else if (amount == -1) {
+					cameraController.addZoom(-cameraLighted.zoom * .25f);
+				}
+				return true;
+			}
 
-					// click or touch
-					@Override
-					public boolean touchDown(int screenX, int screenY,
-							int pointer, int button) {
+			// click or touch
+			@Override
+			public boolean touchDown(int screenX, int screenY, int pointer,
+					int button) {
+//				lander.fireMainRocket();
+				return false;
+			}
 
-						return false;
-					}
+			@Override
+			public boolean touchUp(int x, int y, int pointer, int button) {
+				cameraUI.unproject(touchPoint.set(x, y, 0));
+				
+				if (mainThrust1.getBounds().contains(touchPoint.x, touchPoint.y) || mainThrust2.getBounds().contains(touchPoint.x, touchPoint.y)) {
+					System.out.println("Touch Released: mainThrust at " + touchPoint.x + " , " + touchPoint.y);
+					lander.stopMainRocket();
+				} else if (sideThrust1.getBounds().contains(touchPoint.x, touchPoint.y) ) {
+					System.out.println("Touch Released: sideThrust at " + touchPoint.x + " , " + touchPoint.y);
+					lander.stopLeftRocket();
+				} else if (sideThrust2.getBounds().contains(touchPoint.x, touchPoint.y) ) {
+					System.out.println("Touch Released: sideThrust at " + touchPoint.x + " , " + touchPoint.y);
+					lander.stopRightRocket();
+				} 
+				return false;
+			}
 
-					@Override
-					public boolean touchUp(int x, int y, int pointer, int button) {
+			@Override
+			public boolean touchDragged(int x, int y, int pointer) {
 
-						return false;
-					}
+				return false;
+			}
+		}; // second input adapter for the input multiplexer
 
-					@Override
-					public boolean touchDragged(int x, int y, int pointer) {
-
-						return false;
-					}
-				}); // second input adapter for the input multiplexer
-
+		Timer.schedule(new Task() {
+			@Override
+			public void run() {
+				isReady = true;
+			}
+		}, 5);
 		Timer.schedule(new Task() {
 			@Override
 			public void run() {
@@ -435,56 +470,81 @@ public class Play implements Screen {
 	public void render(float delta) {
 		GL20 gl = Gdx.gl;
 		gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-		
 
-		// draw the background
-		backgroundBatch.setProjectionMatrix(cameraBackground.combined);
-		backgroundBatch.begin();
-		stars.render(backgroundBatch);
-		backgroundBatch.end();
-		
-		// draw the lighted batch
-		lightedBatch.setProjectionMatrix(cameraLighted.combined);
-		lightedBatch.enableBlending();
-		lightedBatch.begin();
-//		stars.render(lightedBatch);
-		
-		if (lander != null) {
-			lander.render(lightedBatch, delta);
-		}
-		for (Firework firework : fireworks) {
-			firework.render(lightedBatch, delta);
-		}
-		for (FireworkExplosion fireworkExplosion : fireworkExplosions) {
-			fireworkExplosion.render(lightedBatch, delta);
-		}
-		
-		if (landerDeath != null) {
-			landerDeath.render(lightedBatch, delta);
-		}
-		// debugRenderer.render(world, cameraLighted.combined);
-		lightedBatch.end();
+		if (isReady) { // hack
+			// draw the background
+			backgroundBatch.setProjectionMatrix(cameraBackground.combined);
+			backgroundBatch.begin();
+			stars.render(backgroundBatch);
+			backgroundBatch.end();
 
-		// draw the ground
-		polySpriteBatch.setProjectionMatrix(cameraLighted.combined);
-		polySpriteBatch.enableBlending();
-		polySpriteBatch.begin();
-		ground.render(polySpriteBatch);
-		polySpriteBatch.end();
-		
+			// draw the lighted batch
+			lightedBatch.setProjectionMatrix(cameraLighted.combined);
+			lightedBatch.enableBlending();
+			lightedBatch.begin();
+			// stars.render(lightedBatch);
 
-		
-				// update and draw the lights
-				rayHandler.setCombinedMatrix(cameraLighted.combined);
-				rayHandler.updateAndRender();
-				
+			if (lander != null) {
+				lander.render(lightedBatch, delta);
+			}
+			for (Firework firework : fireworks) {
+				firework.render(lightedBatch, delta);
+			}
+			for (FireworkExplosion fireworkExplosion : fireworkExplosions) {
+				fireworkExplosion.render(lightedBatch, delta);
+			}
 
-				update(delta);
+			if (landerDeath != null) {
+				landerDeath.render(lightedBatch, delta);
+			}
+			// debugRenderer.render(world, cameraLighted.combined);
+			lightedBatch.end();
+
+			// draw the ground
+			polySpriteBatch.setProjectionMatrix(cameraLighted.combined);
+			polySpriteBatch.enableBlending();
+			polySpriteBatch.begin();
+			ground.render(polySpriteBatch);
+			polySpriteBatch.end();
+			
+			
+			
+			// update and draw the lights
+			rayHandler.setCombinedMatrix(cameraLighted.combined);
+			rayHandler.updateAndRender();
+
+			hudBatch.setProjectionMatrix(cameraUI.combined);
+			hudBatch.begin();
+			mainThrust1.render(hudBatch);
+			mainThrust2.render(hudBatch);
+			sideThrust1.render(hudBatch);
+			sideThrust2.render(hudBatch);
+			hudBatch.end();
+			
+			update(delta);
+		}
+
 	}
 
 	// update
 	public void update(float delta) {
-		Vector2 landerPos = lander.getChassis().getPosition().cpy();
+		
+		if (Gdx.input.justTouched()) {
+			cameraUI.unproject(touchPoint.set(Gdx.input.getX(), Gdx.input.getY(), 0));
+			
+			if (mainThrust1.getBounds().contains(touchPoint.x, touchPoint.y) || mainThrust2.getBounds().contains(touchPoint.x, touchPoint.y)) {
+				System.out.println("Touched: mainThrust at " + touchPoint.x + " , " + touchPoint.y);
+				lander.fireMainRocket();
+			} else if (sideThrust1.getBounds().contains(touchPoint.x, touchPoint.y) ) {
+				System.out.println("Touched: sideThrust at " + touchPoint.x + " , " + touchPoint.y);
+				lander.fireLeftRocket();
+			} else if (sideThrust2.getBounds().contains(touchPoint.x, touchPoint.y) ) {
+				System.out.println("Touched: sideThrust at " + touchPoint.x + " , " + touchPoint.y);
+				lander.fireRightRocket();
+			} 
+		}
+		
+		landerPos = lander.getChassis().getPosition().cpy();
 
 		cameraController.setTarget(landerPos);
 		cameraController.update(delta);
@@ -493,15 +553,15 @@ public class Play implements Screen {
 
 		world.rayCast(callback, landerPos.add(0, -15),
 				landerPos.cpy().add(0, -rayCastDistance));
-		
-			lander.update(delta);
-			
-			if (shouldDestroyLander) {
-				shouldDestroyLander = false;
-				lander.breakApart(world);
-			}
 
-			// fireworks
+		lander.update(delta);
+
+		if (shouldDestroyLander) {
+			shouldDestroyLander = false;
+			lander.breakApart(world);
+		}
+
+		// fireworks
 		for (Firework firework : fireworks) {
 			firework.update(delta);
 			// if the firework is dead, make a firework explosion
@@ -523,7 +583,22 @@ public class Play implements Screen {
 	}
 
 	public void createUI() {
-		fuelGauge = new FuelGauge(-(width / 2), (height / 2));
+		float buttonWidth = width * .05f,
+				mainHeight = height * .7f,
+				sideHeight = height * .3f;
+		float initX = -width/2,
+				initY = -height/2;
+		mainThrust1 = new Button(new Rectangle(initX,initY, buttonWidth, mainHeight), Assets.instance.ui.buttonMainThrust);
+		mainThrust2 = new Button(new Rectangle(initX + width - buttonWidth, initY , buttonWidth, mainHeight), Assets.instance.ui.buttonMainThrust);
+		sideThrust1 = new Button(new Rectangle(initX, initY + mainHeight, buttonWidth, sideHeight), Assets.instance.ui.buttonSideThrust);
+		sideThrust2 = new Button(new Rectangle(initX + width - buttonWidth, initY + mainHeight, buttonWidth, sideHeight), Assets.instance.ui.buttonSideThrust);
+		
+		colorMainButton = Color.BLUE;
+		colorMainButton.a = .25f;
+		colorSideButton = Color.WHITE;
+		colorSideButton.a = .25f;
+		
+//		fuelGauge = new FuelGauge(-(width / 2), (height / 2));
 	}
 
 	@Override
@@ -567,14 +642,14 @@ public class Play implements Screen {
 
 		Color lightColor = Color.WHITE;
 		lightColor.a = (isDarkSide ? .034f : .12f);
-		Light light = new DirectionalLight(rayHandler, 500, lightColor, -40);
+		Light light = new DirectionalLight(rayHandler, 100, lightColor, -40);
 		Filter lightFilter = new Filter();
 		lightFilter.categoryBits = Constants.FILTER_LIGHT;
 		lightFilter.maskBits = Constants.FILTER_NONE;
 		Light.setContactFilter(lightFilter);
 
-//		lightColor.a = .0005f;
-//		rayHandler.setAmbientLight(lightColor);
+		// lightColor.a = .0005f;
+		// rayHandler.setAmbientLight(lightColor);
 	}
 
 	public void createFireworks(int number) {
@@ -584,11 +659,11 @@ public class Play implements Screen {
 					.getChassis().getPosition()), new Color(
 					(float) Math.random(), (float) Math.random(),
 					(float) Math.random(), (float) Math.random()),
-					(float) (2 + (3 * Math.random())));
+					(float) (2 + (1 * Math.random())));
 			firework.getBody().applyLinearImpulse(
-					MyMath.getRectCoords(new Vector2((float) (15 + (10 * Math.random())),
-							(float) (90 + ((45 * Math.random()))
-									* (MathUtils.randomBoolean() ? 1 : -1)))),
+					MyMath.getRectCoords(new Vector2((float) (15 + (10 * Math
+							.random())), (float) (90 + ((45 * Math.random()))
+							* (MathUtils.randomBoolean() ? 1 : -1)))),
 					firework.getBody().getWorldCenter(), false);
 			fireworks.add(firework);
 		}
@@ -617,10 +692,9 @@ public class Play implements Screen {
 		rayHandler.dispose();
 		createLights();
 		lander.createLights(rayHandler);
-		
+
 	}
 
-	
 	public void destroyLander() {
 		if (!lander.isDead) {
 			System.out.println("die");
@@ -644,7 +718,7 @@ public class Play implements Screen {
 
 	@Override
 	public void hide() {
-//		dispose();
+		// dispose();
 	}
 
 	@Override
@@ -663,8 +737,8 @@ public class Play implements Screen {
 		world.dispose();
 		debugRenderer.dispose();
 		shapeRenderer.dispose();
-//		rayHandler.dispose();
-//		lightedBatch.dispose();
+		// rayHandler.dispose();
+		// lightedBatch.dispose();
 		backgroundBatch.dispose();
 		hudBatch.dispose();
 		fuelGauge.dispose();
@@ -695,5 +769,10 @@ public class Play implements Screen {
 			}
 			destroyJointQueue.clear();
 		}
+	}
+
+	@Override
+	public InputProcessor getInputProcessor() {
+		return inputAdapter;
 	}
 }

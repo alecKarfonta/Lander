@@ -24,16 +24,18 @@ public class Assets implements Disposable, AssetErrorListener {
 	public static final Assets instance = new Assets();	// singleton
 	private AssetManager assetManager;
 	private TextureAtlas atlas;
-
-	
-	private Assets() {}
-	
 	public AssetFonts fonts;
 	public AssetSounds sounds;
 	public AssetMusic music;
 	public AssetLander lander;
 	public AssetLevelDecorations levelDecorations;
 	public AssetUI ui;
+	
+	public Skin skin = new Skin(Gdx.files.internal(Constants.SKIN_MENU_UI),
+			new TextureAtlas(Constants.TEXTURE_ATLAS_MENU_UI));
+
+	private Assets() {}
+	
 	
 	
 	public void init( AssetManager assetManager) {
@@ -45,6 +47,8 @@ public class Assets implements Disposable, AssetErrorListener {
 		assetManager.load("sounds/playerDeath.wav", Sound.class);
 		assetManager.load("sounds/applause.mp3", Sound.class);
 		assetManager.load("sounds/firework.wav", Sound.class);
+		assetManager.load("sounds/legBreak.wav", Sound.class);
+		assetManager.load("sounds/landerImpact.wav", Sound.class);
 		assetManager.load("music/intro.ogg", Music.class);
 		assetManager.finishLoading();
 		
@@ -88,7 +92,10 @@ public class Assets implements Disposable, AssetErrorListener {
 	}
 	
 	public class AssetUI {
-		public AtlasRegion gaugeFill, gaugeBorder, glassPanel, glassPanel_corners, metalPanel_blue, metalPanel_red, metalPanel_yellow;
+		public AtlasRegion gaugeFill, gaugeBorder, glassPanel, 
+							glassPanel_corners, metalPanel_blue, 
+							metalPanel_red, metalPanel_yellow,
+							buttonMainThrust, buttonSideThrust;
 		
 		public AssetUI (TextureAtlas atlas) {
 			gaugeFill = atlas.findRegion("ui/fill");
@@ -96,8 +103,10 @@ public class Assets implements Disposable, AssetErrorListener {
 			glassPanel = atlas.findRegion("ui/glassPanel");
 			glassPanel_corners = atlas.findRegion("ui/glassPanel_corners");
 			metalPanel_blue = atlas.findRegion("ui/metaPanel_blue");
-			metalPanel_red = atlas.findRegion("ui/metalPanel_red");;
+			metalPanel_red = atlas.findRegion("ui/metalPanel_red");
 			metalPanel_yellow = atlas.findRegion("ui/metalPanel_yellow");
+			buttonMainThrust = atlas.findRegion("ui/buttonMainThrust");
+			buttonSideThrust = atlas.findRegion("ui/buttonSideThrust");
 		}
 	}
 	
@@ -121,7 +130,9 @@ public class Assets implements Disposable, AssetErrorListener {
 	}
 	
 	public class AssetSounds {
-		public final Sound mainExhaust, sideExhaust, playerDeath, applause, firework;
+		public final Sound mainExhaust, sideExhaust, playerDeath, 
+							applause, firework, legBreak,
+							landerImpact;
 		
 		public AssetSounds (AssetManager am) {
 			mainExhaust = am.get("sounds/mainExhaust.mp3", Sound.class);
@@ -129,6 +140,8 @@ public class Assets implements Disposable, AssetErrorListener {
 			playerDeath = am.get("sounds/playerDeath.wav", Sound.class);
 			applause = am.get("sounds/applause.mp3", Sound.class);
 			firework = am.get("sounds/firework.wav", Sound.class);
+			legBreak = am.get("sounds/legBreak.wav", Sound.class);
+			landerImpact = am.get("sounds/landerImpact.wav", Sound.class);
 		}
 	}
 		

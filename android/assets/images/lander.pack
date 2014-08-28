@@ -102,111 +102,125 @@ surface/surface
   index: -1
 
 lander4.png
-size: 816,116
+size: 236,510
 format: RGBA8888
 filter: Nearest,Nearest
 repeat: none
 ui/border
   rotate: false
-  xy: 2, 2
+  xy: 2, 47
   size: 100, 12
   orig: 100, 12
   offset: 0, 0
   index: -1
+ui/buttonMainThrust
+  rotate: false
+  xy: 2, 61
+  size: 66, 245
+  orig: 66, 245
+  offset: 0, 0
+  index: -1
+ui/buttonSideThrust
+  rotate: false
+  xy: 70, 62
+  size: 64, 244
+  orig: 64, 244
+  offset: 0, 0
+  index: -1
 ui/dotBlue
   rotate: false
-  xy: 716, 78
+  xy: 206, 486
   size: 24, 24
   orig: 24, 24
   offset: 0, 0
   index: -1
 ui/dotGreen
   rotate: false
-  xy: 716, 52
+  xy: 206, 460
   size: 24, 24
   orig: 24, 24
   offset: 0, 0
   index: -1
 ui/dotRed
   rotate: false
-  xy: 742, 78
+  xy: 206, 434
   size: 24, 24
   orig: 24, 24
   offset: 0, 0
   index: -1
 ui/dotWhite
   rotate: false
-  xy: 716, 26
+  xy: 206, 408
   size: 24, 24
   orig: 24, 24
   offset: 0, 0
   index: -1
 ui/dotYellow
   rotate: false
-  xy: 742, 52
+  xy: 206, 382
   size: 24, 24
   orig: 24, 24
   offset: 0, 0
   index: -1
 ui/dot_shadow
   rotate: false
-  xy: 768, 78
+  xy: 206, 356
   size: 24, 24
   orig: 24, 24
   offset: 0, 0
   index: -1
 ui/fill
   rotate: false
-  xy: 716, 104
+  xy: 2, 33
   size: 100, 12
   orig: 100, 12
   offset: 0, 0
   index: -1
 ui/glassPanel
   rotate: false
-  xy: 2, 16
+  xy: 2, 410
   size: 100, 100
   orig: 100, 100
   offset: 0, 0
   index: -1
 ui/glassPanel_cornerTR
   rotate: false
-  xy: 104, 16
+  xy: 104, 410
   size: 100, 100
   orig: 100, 100
   offset: 0, 0
   index: -1
 ui/glassPanel_corners
   rotate: false
-  xy: 206, 16
+  xy: 2, 308
   size: 100, 100
   orig: 100, 100
   offset: 0, 0
   index: -1
 ui/metalPanel_blue
   rotate: false
-  xy: 308, 16
+  xy: 104, 308
   size: 100, 100
   orig: 100, 100
   offset: 0, 0
   index: -1
 ui/metalPanel_red
   rotate: false
-  xy: 410, 16
+  xy: 136, 206
   size: 100, 100
   orig: 100, 100
   offset: 0, 0
   index: -1
 ui/metalPanel_redCorner
   rotate: false
-  xy: 512, 16
+  xy: 136, 104
   size: 100, 100
   orig: 100, 100
   offset: 0, 0
   index: -1
 ui/metalPanel_yellow
   rotate: false
-  xy: 614, 16
+  xy: 136, 2
   size: 100, 100
   orig: 100, 100
   offset: 0, 0
