@@ -74,7 +74,7 @@ public class AndroidLauncher extends AndroidApplication implements GoogleInterfa
 		// Create and setup the AdMob view
 		adView = new AdView(this); // Put in your secret key here
 		adView.setAdSize(AdSize.BANNER);
-		adView.setAdUnitId("ca-app-pub-3051564686435793/8522567266");
+		adView.setAdUnitId("ca-app-pub-3051564686435793/1435645667");
 		adView.setAdListener(new AdListener() {
 			@Override
 			public void onAdLoaded() {

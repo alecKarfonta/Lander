@@ -1,0 +1,213 @@
+
+lander.png
+size: 1282,722
+format: RGBA8888
+filter: Nearest,Nearest
+repeat: none
+itsFullOfStars
+  rotate: false
+  xy: 2, 2
+  size: 1280, 720
+  orig: 1280, 720
+  offset: 0, 0
+  index: -1
+
+lander2.png
+size: 730,494
+format: RGBA8888
+filter: Nearest,Nearest
+repeat: none
+lander/lander
+  rotate: false
+  xy: 2, 178
+  size: 260, 316
+  orig: 260, 316
+  offset: 0, 0
+  index: -1
+lander/landerPiece1
+  rotate: false
+  xy: 264, 8
+  size: 133, 156
+  orig: 133, 156
+  offset: 0, 0
+  index: -1
+lander/landerPiece2
+  rotate: false
+  xy: 404, 166
+  size: 128, 206
+  orig: 128, 206
+  offset: 0, 0
+  index: -1
+lander/landerPiece3
+  rotate: false
+  xy: 264, 374
+  size: 260, 120
+  orig: 260, 120
+  offset: 0, 0
+  index: -1
+lander/leftLeg
+  rotate: false
+  xy: 534, 273
+  size: 97, 177
+  orig: 97, 177
+  offset: 0, 0
+  index: -1
+lander/piece1
+  rotate: false
+  xy: 399, 2
+  size: 132, 162
+  orig: 132, 162
+  offset: 0, 0
+  index: -1
+lander/piece2
+  rotate: false
+  xy: 264, 166
+  size: 138, 206
+  orig: 138, 206
+  offset: 0, 0
+  index: -1
+lander/piece3
+  rotate: false
+  xy: 2, 55
+  size: 260, 121
+  orig: 260, 121
+  offset: 0, 0
+  index: -1
+lander/rightLeg
+  rotate: false
+  xy: 633, 273
+  size: 97, 177
+  orig: 97, 177
+  offset: 0, 0
+  index: -1
+lander/rocket
+  rotate: false
+  xy: 526, 452
+  size: 144, 42
+  orig: 144, 42
+  offset: 0, 0
+  index: -1
+
+lander3.png
+size: 1026,1026
+format: RGBA8888
+filter: Nearest,Nearest
+repeat: none
+surface/surface
+  rotate: false
+  xy: 2, 2
+  size: 1024, 1024
+  orig: 1024, 1024
+  offset: 0, 0
+  index: -1
+
+lander4.png
+size: 816,116
+format: RGBA8888
+filter: Nearest,Nearest
+repeat: none
+ui/border
+  rotate: false
+  xy: 2, 2
+  size: 100, 12
+  orig: 100, 12
+  offset: 0, 0
+  index: -1
+ui/dotBlue
+  rotate: false
+  xy: 716, 78
+  size: 24, 24
+  orig: 24, 24
+  offset: 0, 0
+  index: -1
+ui/dotGreen
+  rotate: false
+  xy: 716, 52
+  size: 24, 24
+  orig: 24, 24
+  offset: 0, 0
+  index: -1
+ui/dotRed
+  rotate: false
+  xy: 742, 78
+  size: 24, 24
+  orig: 24, 24
+  offset: 0, 0
+  index: -1
+ui/dotWhite
+  rotate: false
+  xy: 716, 26
+  size: 24, 24
+  orig: 24, 24
+  offset: 0, 0
+  index: -1
+ui/dotYellow
+  rotate: false
+  xy: 742, 52
+  size: 24, 24
+  orig: 24, 24
+  offset: 0, 0
+  index: -1
+ui/dot_shadow
+  rotate: false
+  xy: 768, 78
+  size: 24, 24
+  orig: 24, 24
+  offset: 0, 0
+  index: -1
+ui/fill
+  rotate: false
+  xy: 716, 104
+  size: 100, 12
+  orig: 100, 12
+  offset: 0, 0
+  index: -1
+ui/glassPanel
+  rotate: false
+  xy: 2, 16
+  size: 100, 100
+  orig: 100, 100
+  offset: 0, 0
+  index: -1
+ui/glassPanel_cornerTR
+  rotate: false
+  xy: 104, 16
+  size: 100, 100
+  orig: 100, 100
+  offset: 0, 0
+  index: -1
+ui/glassPanel_corners
+  rotate: false
+  xy: 206, 16
+  size: 100, 100
+  orig: 100, 100
+  offset: 0, 0
+  index: -1
+ui/metalPanel_blue
+  rotate: false
+  xy: 308, 16
+  size: 100, 100
+  orig: 100, 100
+  offset: 0, 0
+  index: -1
+ui/metalPanel_red
+  rotate: false
+  xy: 410, 16
+  size: 100, 100
+  orig: 100, 100
+  offset: 0, 0
+  index: -1
+ui/metalPanel_redCorner
+  rotate: false
+  xy: 512, 16
+  size: 100, 100
+  orig: 100, 100
+  offset: 0, 0
+  index: -1
+ui/metalPanel_yellow
+  rotate: false
+  xy: 614, 16
+  size: 100, 100
+  orig: 100, 100
+  offset: 0, 0
+  index: -1
